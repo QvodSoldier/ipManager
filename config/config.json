@@ -1,0 +1,9 @@
+{
+    "nsxmanager": [{
+      "host1": "10.213.114.14",
+      "host2": "10.213.114.15",
+      "host3": "10.213.114.16"
+      }],
+    "username": "admin",
+    "password": "cpaasCeb@123"
+}
