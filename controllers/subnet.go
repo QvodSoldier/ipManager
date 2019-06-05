@@ -10,8 +10,9 @@ type SubnetsController struct{}
 
 func (this *SubnetsController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	client := new(models.Client)
+	ClusterName := r.FormValue("cluster")
 
-	subnets, err := client.HandleSubnets(client.GetOriginalSubnets())
+	subnets, err := client.HandleSubnets(client.GetOriginalSubnets(), ClusterName)
 	if err != nil {
 		log.Fatal(err)
 	}

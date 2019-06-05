@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
 	"ipManager/config"
 	"ipManager/tools"
 	"log"
@@ -56,7 +55,7 @@ func (this *Client) GetOriginalSubnetView(sid string) []byte {
 	return data
 }
 
-func (this *Client) HandleSubnets(data []byte) ([]byte, error) {
+func (this *Client) HandleSubnets(data []byte, cname string) ([]byte, error) {
 	// 从所有的IP池中，筛选出容器网络的Subnet，并组织数据返回
 	var originaldata OriginalData
 	var newdata NewData
@@ -67,26 +66,29 @@ func (this *Client) HandleSubnets(data []byte) ([]byte, error) {
 	}
 
 	for _, v := range originaldata.Results {
+
 		if v.Tags != nil && v.Tags[0]["scope"] == "ncp/subnet" {
 			// 获取命名空间名字
 			tmpV := strings.FieldsFunc(v.Display_name, func(c rune) bool {
 				return c == '-'
 			})
-			tmpV = tmpV[:len(tmpV)-1]
-			nsn := strings.Replace(strings.Join(tmpV, " "), " ", "-", -1)
-			// 传入一个新Subnet
-			var Subnet = NewSubnet{
-				SubnetName:  v.Display_name,
-				NameSpace:   nsn,
-				Cidr:        v.Subnets[0].Cidr,
-				TotalIp:     v.Pool_usage.Total_ids,
-				FreeIp:      v.Pool_usage.Free_ids,
-				AllocatedIp: v.Pool_usage.Allocated_ids,
-				Id:          v.Id,
-				// IpStart:     v.Subnets[0].Allocation_ranges[0]["start"],
-				// IpEnd:       v.Subnets[0].Allocation_ranges[0]["end"],
+			tmpV2 := tmpV[0:2]
+			cn := strings.Replace(strings.Join(tmpV2, " "), " ", "-", -1)
+			if cn == cname {
+				tmpV1 := tmpV[2 : len(tmpV)-1]
+				nsn := strings.Replace(strings.Join(tmpV1, " "), " ", "-", -1)
+				// 传入一个新Subnet
+				var Subnet = NewSubnet{
+					SubnetName:  v.Display_name,
+					NameSpace:   nsn,
+					Cidr:        v.Subnets[0].Cidr,
+					TotalIp:     v.Pool_usage.Total_ids,
+					FreeIp:      v.Pool_usage.Free_ids,
+					AllocatedIp: v.Pool_usage.Allocated_ids,
+					Id:          v.Id,
+				}
+				newdata.Subnets = append(newdata.Subnets, Subnet)
 			}
-			newdata.Subnets = append(newdata.Subnets, Subnet)
 		}
 	}
 	// json序列化并返回
@@ -189,7 +191,6 @@ func GetOriginalLS() []byte {
 	req.Url = "https://" + cfg.Nsxmanager[0]["host1"] + "/api/v1/logical-switches"
 
 	data := req.ClientGet()
-	fmt.Println(data)
 	return data
 }
 
